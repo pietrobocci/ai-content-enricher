@@ -299,3 +299,37 @@ Quando una variabile deve contenere *una famiglia* di valori, il tipo va
 dichiarato, non dedotto. E vale una nota di metodo: **un piano scritto bene non
 garantisce codice che compila.** Il codice sulla carta è un'ipotesi finché non
 passa dal compilatore.
+
+---
+
+## 10. Un commit si è portato via un file che non c'entrava niente
+
+**Quando:** durante la correzione del Task 3.
+
+**Cosa è successo.** Il commit di correzione, il cui messaggio parla solo
+dell'allineamento tra prompt e schema, conteneva anche 42 righe di modifiche a
+`docs/Diario-di-bordo.md` — un file che con quella correzione non c'entra nulla.
+
+**Perché.** Il file era stato modificato ma non committato: stava nel working
+tree, in attesa. Quando la correzione è stata fatta e committata, il comando di
+commit ha raccolto anche quella modifica pendente, perché era lì.
+
+**Perché è un problema, anche se il contenuto era innocuo.** Un commit dovrebbe
+essere **un'unità di senso**: una cosa sola, descritta dal suo messaggio.
+Quando ne contiene due, si perde tutto quello che la storia di git serve a fare.
+Se domani quella correzione va annullata con un `git revert`, sparisce anche la
+documentazione. Se qualcuno cerca *quando* è stata introdotta una riga di
+documentazione, la trova dentro un commit che parla di tag e accenti. E in una
+code review, chi legge il diff deve chiedersi perché la modifica al prompt tocchi
+anche un file di documentazione — una domanda che non doveva nemmeno nascere.
+
+**Come è stato risolto.** Regola di sequenza: non lasciare mai modifiche non
+committate nel working tree mentre qualcun altro sta lavorando sullo stesso
+repository. O si committano prima, o si aspetta.
+
+**Lezione.** In git, `git add -A` e `git commit -a` fotografano *tutto quello che
+trovano*, non "quello che stavi facendo tu" — git non ha modo di saperlo.
+Elencare i file esplicitamente in `git add` è più noioso e più corretto. E vale
+la regola generale: un working tree condiviso è uno stato condiviso, con tutti i
+problemi degli stati condivisi. Il fatto che i file toccati fossero diversi non
+bastava: **l'area di staging è comunque una sola.**
