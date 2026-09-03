@@ -38,7 +38,7 @@ export function createGeminiProvider(opts: GeminiOptions): LlmProvider {
   const maxRetries = opts.maxRetries ?? 2;
 
   async function generate(req: LlmRequest): Promise<Result<string>> {
-    const url = `${BASE_URL}/${model}:generateContent?key=${opts.apiKey}`;
+    const url = `${BASE_URL}/${model}:generateContent`;
     const body = {
       contents: [
         {
@@ -65,7 +65,12 @@ export function createGeminiProvider(opts: GeminiOptions): LlmProvider {
       try {
         risposta = await fetchImpl(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            // La chiave va in un header, non nella query string: una URL
+            // finisce nei log dei proxy e dentro i messaggi d'errore.
+            "x-goog-api-key": opts.apiKey,
+          },
           body: JSON.stringify(body),
         });
       } catch (e) {

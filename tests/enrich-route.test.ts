@@ -48,11 +48,16 @@ describe("POST /api/enrich", () => {
   it("segnala chiaramente la chiave mancante", async () => {
     delete process.env.GEMINI_API_KEY;
 
+    const fetchSpia = vi.fn();
+    globalThis.fetch = fetchSpia as unknown as typeof fetch;
+
     const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
     const risposta = await POST(richiestaCon(jpeg, "prodotto.jpg", "image/jpeg"));
     const corpo = await risposta.json();
 
     expect(risposta.status).toBe(500);
     expect(corpo.error).toContain("GEMINI_API_KEY");
+    // Nessuna chiamata di rete deve partire quando la chiave manca.
+    expect(fetchSpia).not.toHaveBeenCalled();
   });
 });

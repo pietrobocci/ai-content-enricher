@@ -48,7 +48,17 @@ export async function POST(request: Request) {
   }
 
   // Salviamo il file solo dopo un arricchimento riuscito.
-  const imagePath = await saveUpload(bytes, controllo.data.mimeType);
+  let imagePath: string;
+  try {
+    imagePath = await saveUpload(bytes, controllo.data.mimeType);
+  } catch {
+    // Il disco può essere pieno o non scrivibile: anche qui l'utente
+    // deve vedere un messaggio, non un errore grezzo di Next.
+    return NextResponse.json(
+      { error: "non è stato possibile salvare l'immagine sul server" },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ draft: esito.data, imagePath, model: provider.name });
 }
