@@ -15,9 +15,9 @@ Branch di lavoro: **`feat/mvp`** (non `master`). Nessun push, nessun remote.
 | 1 — Scaffolding Next.js + Vitest | ✅ completo, review pulita |
 | 2 — Schema Zod della bozza | ✅ completo, review pulita |
 | 3 — Costruttore del prompt | ✅ completo, dopo 1 giro di correzioni |
-| 4 — Tipo `Result` + provider Gemini | correzione fatta, re-review in corso |
-| 5 — Orchestrazione dell'arricchimento | da fare |
-| 6 — Validazione del file caricato | da fare |
+| 4 — Tipo `Result` + provider Gemini | ✅ completo, dopo 1 giro di correzioni |
+| 5 — Orchestrazione dell'arricchimento | ✅ completo, review pulita |
+| 6 — Validazione del file caricato | implementato, review in corso |
 | 7 — Database (Prisma + SQLite) | da fare |
 | 8 — Endpoint di arricchimento | da fare |
 | 9 — Endpoint dei prodotti | da fare |
@@ -25,7 +25,7 @@ Branch di lavoro: **`feat/mvp`** (non `master`). Nessun push, nessun remote.
 | 11 — Pagina catalogo | da fare |
 | 12 — Prova reale, test di contratto, README | da fare |
 
-Suite di test: **24/24 verdi**. `npx tsc --noEmit` pulito. `npm run build` verificata al Task 1.
+Suite di test: **35/35 verdi**. `npx tsc --noEmit` pulito. `npm run build` verificata al Task 1.
 
 ---
 
