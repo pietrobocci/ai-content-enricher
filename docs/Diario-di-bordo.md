@@ -174,3 +174,45 @@ mano due definizioni allineate — funziona finché qualcuno aggiunge un campo i
 una sola delle due, e quel giorno il bug è silenzioso. Vale anche il rovescio:
 il secondo test è più importante del primo, perché verifica un'**assenza**, e le
 assenze sono ciò che nessuno controlla mai a occhio.
+
+---
+
+## 7. Un difetto che oggi non esiste, ma esisterà
+
+**Quando:** Task 2, in revisione del codice — non durante lo sviluppo.
+
+**Cosa è emerso.** Il filtro che adatta lo schema Zod al formato accettato da
+Gemini tiene solo cinque chiavi: `type`, `properties`, `items`, `enum`,
+`required`. Tutto il resto viene scartato.
+
+Oggi funziona perfettamente, perché tutti i campi della bozza sono stringhe,
+array o enum semplici. Ma se un giorno un campo diventasse **opzionale**
+(`.optional()`), **annullabile** (`.nullable()`) o un'**unione di tipi**
+(`z.union(...)`), la conversione automatica produrrebbe chiavi di composizione
+come `anyOf`. Il filtro non le conosce, quindi le butterebbe via — e il
+sottoschema di quel campo si ridurrebbe a `{}`, cioè "nessuna informazione sul
+tipo".
+
+**Perché è insidioso.** Non esploderebbe niente. Nessun errore, nessuna
+eccezione: semplicemente Gemini riceverebbe uno schema che non dice più nulla su
+quel campo, e la qualità delle risposte peggiorerebbe in modo silenzioso. Il
+sintomo apparirebbe lontano dalla causa, ed è la classe di bug più costosa da
+diagnosticare.
+
+**Come è stato gestito.** Non è stato corretto adesso, di proposito: il ramo di
+codice non è raggiungibile con lo schema attuale, e scrivere difese per casi che
+non esistono è esattamente il tipo di lavoro che il progetto ha deciso di non
+fare (YAGNI). È stato invece **annotato**, con la condizione precisa che lo
+riattiverebbe: "se un campo diventa opzionale o nullable, questo filtro va
+esteso".
+
+**Lezione.** Ci sono tre modi di trattare un difetto latente: correggerlo subito
+(spesso spreco), ignorarlo (rischio silenzioso), o **registrarlo insieme alla
+condizione che lo rende reale**. Il terzo è quasi sempre il migliore, e il pezzo
+che la gente dimentica è proprio la condizione: senza quella, la nota diventa
+rumore e nessuno saprà mai quando è il momento di agire.
+
+Vale anche la pena notare **come** è saltato fuori: non scrivendo il codice, ma
+rileggendolo con l'obiettivo esplicito di chiedersi *"in quali condizioni questo
+smetterebbe di funzionare?"*. È una domanda diversa da *"funziona?"*, e trova
+cose diverse.

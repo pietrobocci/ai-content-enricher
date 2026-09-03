@@ -21,7 +21,7 @@ export const productDraftSchema = z.object({
   title: z.string().min(3).max(60),
   description: z.string().min(20).max(400),
   tags: z
-    .array(z.string().min(2).max(20).regex(/^[a-z0-9 -]+$/, "solo minuscole, cifre, spazi e trattini"))
+    .array(z.string().min(2).max(20).regex(/^[a-z0-9à-öø-ÿ -]+$/, "solo minuscole (accentate ammesse), cifre, spazi e trattini"))
     .min(3)
     .max(6),
   category: z.enum(CATEGORIES),

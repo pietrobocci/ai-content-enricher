@@ -1,4 +1,4 @@
-import { CATEGORIES } from "@/lib/schema";
+import { CATEGORIES, CONFIDENCE_LEVELS } from "@/lib/schema";
 
 /**
  * Il prompt e' la linea di difesa piu' debole: sono solo parole, il modello
@@ -14,9 +14,9 @@ export function buildPrompt(opts: { hint?: string } = {}): string {
     "- Scrivi tutti i testi in italiano.",
     "- Il titolo e' breve e concreto, da 3 a 60 caratteri.",
     "- La descrizione va da 20 a 400 caratteri, senza promesse inventate.",
-    "- Genera da 3 a 6 tag, tutti in minuscolo, senza cancelletto.",
+    "- Genera da 3 a 6 tag, ognuno da 2 a 20 caratteri, tutti in minuscolo: solo lettere, cifre, spazi e trattini, senza cancelletto e senza punteggiatura.",
     `- La categoria deve essere ESATTAMENTE uno di questi valori: ${CATEGORIES.join(", ")}.`,
-    "- Il campo confidence indica quanto sei sicuro: alta, media oppure bassa.",
+    `- Il campo confidence indica quanto sei sicuro: ${CONFIDENCE_LEVELS.join(", ")}.`,
     "- Se la foto e' poco chiara o il prodotto non e' riconoscibile, usa confidence bassa.",
     "- Non inventare materiali, misure o marchi che non si vedono nella foto.",
   ];

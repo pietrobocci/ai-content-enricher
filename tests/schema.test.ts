@@ -44,6 +44,14 @@ describe("productDraftSchema", () => {
     expect(esito.success).toBe(false);
   });
 
+  it("accetta tag con lettere accentate", () => {
+    const esito = productDraftSchema.safeParse({
+      ...bozzaValida,
+      tags: ["città", "perché", "però"],
+    });
+    expect(esito.success).toBe(true);
+  });
+
   it("rifiuta una descrizione troppo corta", () => {
     const esito = productDraftSchema.safeParse({ ...bozzaValida, description: "corta" });
     expect(esito.success).toBe(false);

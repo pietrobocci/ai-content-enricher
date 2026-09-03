@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildPrompt, buildRetryPrompt } from "@/lib/prompt";
-import { CATEGORIES } from "@/lib/schema";
+import { CATEGORIES, CONFIDENCE_LEVELS } from "@/lib/schema";
 
 describe("buildPrompt", () => {
   it("elenca tutte le categorie ammesse", () => {
@@ -21,6 +21,18 @@ describe("buildPrompt", () => {
 
   it("non aggiunge sezioni vuote quando il suggerimento manca", () => {
     expect(buildPrompt()).not.toContain("Suggerimento");
+  });
+
+  it("dichiara i limiti di lunghezza dei tag", () => {
+    const prompt = buildPrompt();
+    expect(prompt).toContain("2 a 20 caratteri");
+  });
+
+  it("elenca i valori di confidence ammessi", () => {
+    const prompt = buildPrompt();
+    for (const valore of CONFIDENCE_LEVELS) {
+      expect(prompt).toContain(valore);
+    }
   });
 });
 
