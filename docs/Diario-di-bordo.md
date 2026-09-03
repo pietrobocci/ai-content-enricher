@@ -216,3 +216,86 @@ Vale anche la pena notare **come** è saltato fuori: non scrivendo il codice, ma
 rileggendolo con l'obiettivo esplicito di chiedersi *"in quali condizioni questo
 smetterebbe di funzionare?"*. È una domanda diversa da *"funziona?"*, e trova
 cose diverse.
+
+---
+
+## 8. Il prompt e lo schema dicevano due cose diverse
+
+**Quando:** Task 3, in revisione.
+
+**Cosa è emerso.** Il prompt istruisce il modello così: *"Genera da 3 a 6 tag,
+tutti in minuscolo, senza cancelletto."* Lo schema Zod, però, impone anche due
+regole che il prompt non nomina: ogni tag deve essere lungo da 2 a 20 caratteri,
+e può contenere solo `[a-z0-9 -]`.
+
+Un modello che obbedisce alla lettera al prompt può quindi produrre `"s"` e
+`"m"` come tag di taglia, oppure `"città"` e `"perché"`. Tutti perfettamente
+conformi a quello che gli è stato chiesto. Tutti rifiutati dalla validazione.
+
+**Perché è grave più di quanto sembri.** L'errore non sarebbe apparso qui.
+Sarebbe apparso nel modulo di arricchimento, sotto forma di un fallimento di
+validazione che fa scattare un tentativo di correzione, e in alcuni casi un
+fallimento definitivo dopo il retry. Chi avesse indagato avrebbe guardato la
+logica di retry, il modello, la rete — e la causa vera sarebbe stata una riga di
+testo in un altro file. **Sintomo e causa a due moduli di distanza.**
+
+**La parte interessante: dove stava davvero il difetto.** La revisione lo aveva
+classificato come "il prompt è incompleto, va allineato allo schema". Rileggendo
+la specifica, però, è emerso che il documento di design prescrive per i tag solo
+*"minuscoli, 2–20 caratteri"*. Il vincolo `[a-z0-9 -]` non veniva dalla
+specifica: era stato aggiunto scrivendo il piano. E in un progetto i cui
+contenuti sono in italiano, **una regola che rifiuta le lettere accentate è
+sbagliata**: `"città"` è un tag legittimo, non un errore da bloccare.
+
+**Come è stato risolto.** Su entrambi i lati:
+
+- la regex dello schema è stata estesa alle lettere accentate minuscole;
+- è stato aggiunto un test che verifica che un tag accentato venga accettato;
+- il test che rifiuta i tag maiuscoli è rimasto, come garanzia che la regola non
+  sia diventata troppo permissiva;
+- il prompt ora dichiara i vincoli veri, lunghezza compresa.
+
+**Lezione, doppia.** La prima: quando due parti del sistema descrivono la stessa
+regola, prima o poi divergono, e la divergenza si manifesta lontano dal punto in
+cui è nata. Qui la regola sui tag viveva in due posti — il prompt e lo schema — e
+nessun test le confrontava.
+
+La seconda, più importante: **quando qualcosa non torna, risalire alla fonte
+prima di correggere.** La correzione ovvia era allineare il prompt allo schema.
+Sarebbe stata sbagliata: avrebbe reso definitivo un vincolo che nessuno aveva
+chiesto e che rompeva l'italiano. La domanda giusta non era "quale dei due ha
+torto", ma "chi ha deciso questa regola, e perché".
+
+---
+
+## 9. Il codice del piano non compilava
+
+**Quando:** Task 4.
+
+**Cosa è successo.** L'implementazione del provider era già scritta per intero
+nel piano. Trascritta fedelmente, TypeScript l'ha rifiutata.
+
+**Perché.** Nel ciclo di retry c'è una variabile che tiene l'ultimo errore
+incontrato, inizializzata con il risultato di una funzione e riassegnata più
+volte dentro il ciclo. TypeScript inferisce il tipo di una variabile dal valore
+con cui la inizializzi: da un oggetto con campi letterali deduce un tipo molto
+stretto — non "un errore qualsiasi", ma "esattamente quel tipo di errore". Le
+riassegnazioni successive, con errori di tipo diverso, non ci entravano più.
+
+**Come è stato risolto.** Dichiarando esplicitamente il tipo di ritorno delle
+funzioni che producono errori, invece di lasciarlo indovinare. Due righe, logica
+invariata.
+
+**Il controllo che non andava saltato.** Un'annotazione di tipo fatta male può
+allargare un tipo *troppo*, e in questo caso specifico avrebbe potuto alterare il
+campo che dice se un errore è ritentabile — cioè cambiare la politica di retry
+senza che nessun test se ne accorgesse, perché i test verificano il
+comportamento, non le annotazioni. Per questo la verifica richiesta in revisione
+non è stata "il codice compila?", ma "l'annotazione ha cambiato i valori da cui
+dipende la logica?".
+
+**Lezione.** L'inferenza di tipo è comoda finché una variabile ha un solo valore.
+Quando una variabile deve contenere *una famiglia* di valori, il tipo va
+dichiarato, non dedotto. E vale una nota di metodo: **un piano scritto bene non
+garantisce codice che compila.** Il codice sulla carta è un'ipotesi finché non
+passa dal compilatore.
