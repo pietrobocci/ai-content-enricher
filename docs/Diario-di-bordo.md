@@ -1,0 +1,176 @@
+# Diario di bordo — problemi, decisioni e lezioni
+
+Registro dei problemi reali incontrati costruendo questo progetto, di come sono
+stati risolti e di cosa insegnano. Serve a due cose: ripassare, e avere risposte
+concrete quando in colloquio arriva la domanda *"raccontami un problema che hai
+dovuto risolvere"*. Un problema raccontato bene vale più di una feature in più.
+
+Ordine cronologico. Ogni voce: cosa è successo, perché, come è stato risolto,
+cosa insegna.
+
+---
+
+## 1. Il progetto non si lasciava creare nella sua stessa cartella
+
+**Quando:** Task 1, primo tentativo.
+
+**Cosa è successo.** `create-next-app` si è rifiutato di partire:
+
+```
+The directory ai-content-enricher contains files that could conflict:
+  .superpowers/
+```
+
+**Perché.** Lo strumento controlla che la cartella sia "abbastanza vuota" e
+confronta il contenuto con una lista chiusa di nomi considerati innocui.
+`docs/` è in quella lista, `.superpowers/` (la cartella di lavoro del processo
+di sviluppo) no. Non esiste nessun flag per saltare il controllo.
+
+**Come è stato risolto.** Cartella spostata temporaneamente fuori dal repo,
+scaffolding eseguito, cartella rimessa al suo posto.
+
+**Lezione.** Molti strumenti di scaffolding pretendono una cartella quasi
+vuota, e la loro definizione di "quasi" è arbitraria e non documentata. Quando
+un tool rifiuta di partire, il primo posto da guardare è cosa considera un
+conflitto — non cosa hai fatto di sbagliato. E la reazione giusta non è
+cancellare: è spostare, perché è reversibile.
+
+---
+
+## 2. Il file `.env.example` spariva dal repository
+
+**Quando:** Task 1.
+
+**Cosa è successo.** Il file `.env.example` veniva creato correttamente, ma
+`git add -A` lo ignorava: non finiva mai nei commit.
+
+**Perché.** Il `.gitignore` generato da Next.js contiene la riga `.env*`, un
+pattern che cattura anche `.env.example`.
+
+**Come è stato risolto.** Aggiunta un'eccezione subito dopo il pattern che la
+causa:
+
+```gitignore
+.env*
+# eccetto il file di esempio: va condiviso e versionato
+!.env.example
+```
+
+**Lezione.** In `.gitignore` il punto esclamativo nega una regola precedente, e
+l'ordine conta: l'eccezione deve venire **dopo** la regola che annulla. È anche
+un promemoria su una distinzione importante: `.env` contiene i segreti e non si
+versiona mai; `.env.example` contiene solo i *nomi* delle variabili e va
+versionato sempre, altrimenti chi clona il progetto non sa cosa configurare.
+
+---
+
+## 3. Un warning di Vitest e la scelta tra due modi di zittirlo
+
+**Quando:** Task 1.
+
+**Cosa è successo.** `npm test` funzionava ma stampava un warning del caricatore
+di configurazione: il file `vitest.config.ts` usa la sintassi `import`, mentre
+il progetto non dichiarava di essere un progetto a moduli ES.
+
+**Perché.** Node ha due sistemi di moduli convissuti per anni: CommonJS
+(`require`) ed ES Modules (`import`). Un file `.ts`/`.js` viene interpretato in
+un modo o nell'altro a seconda del campo `"type"` nel `package.json`.
+
+**Come è stato risolto.** Aggiunto `"type": "module"` al `package.json`.
+Verificato che i file di configurazione generati da Next (`next.config.ts`,
+`postcss.config.mjs`, `eslint.config.mjs`) fossero già compatibili, e che
+`npm run build` continuasse a funzionare.
+
+**Il compromesso, che è la parte interessante.** In review è emersa
+un'alternativa più chirurgica: rinominare `vitest.config.ts` in
+`vitest.config.mts`, che dichiara "questo singolo file è ESM" senza cambiare la
+semantica dell'intero progetto. La soluzione adottata è più larga: da ora ogni
+file `.js` del progetto è ESM, quindi un futuro script scritto con `require()`
+andrà rinominato `.cjs`.
+
+**Lezione.** Un warning si può quasi sempre zittire in più modi, e la differenza
+tra loro è il *raggio d'azione*. La domanda giusta non è "come lo faccio
+sparire", è "quanto ampia è la modifica rispetto al problema che risolve". Qui è
+stata accettata la soluzione larga dopo aver verificato che non rompesse nulla —
+ma la scelta va conosciuta, non subita.
+
+---
+
+## 4. Un test che sarebbe stato verde senza eseguire niente
+
+**Quando:** scansione del piano, prima di scrivere una riga di codice.
+
+**Cosa è successo.** Il piano prevedeva questo comando per lanciare il test di
+contratto (l'unico che chiama davvero l'API):
+
+```
+vitest run tests/gemini.contract.test.ts --exclude ''
+```
+
+L'idea era: la configurazione esclude i file `*.contract.test.ts` dalla suite
+normale, quindi per lanciarli serve annullare quell'esclusione passando una
+stringa vuota.
+
+**Perché era sbagliato.** Passare una stringa vuota a `--exclude` non sovrascrive
+in modo affidabile la configurazione. Il rischio concreto: il comando termina
+con successo **senza aver eseguito alcun test**, e l'output sembra quello di un
+successo.
+
+**Come è stato risolto.** Sostituito con un'esclusione esplicita e innocua:
+
+```
+vitest run --exclude "node_modules/**" tests/gemini.contract.test.ts
+```
+
+**Lezione.** Questa è la categoria di bug più insidiosa di tutte: **un test che
+non fallisce perché non gira**. Dà la stessa sensazione di sicurezza di un test
+che passa, senza verificare nulla. Ogni volta che si scrive un comando di test
+con filtri o esclusioni, la prima verifica da fare è che il numero di test
+eseguiti sia quello atteso — non che il comando esca con successo.
+
+---
+
+## 5. L'identità sbagliata nei commit
+
+**Quando:** setup del repository.
+
+**Cosa è successo.** Il `git config --global` della macchina era impostato
+sull'indirizzo email aziendale. Il primo commit di un progetto personale
+destinato al GitHub personale sarebbe stato firmato con quello.
+
+**Come è stato risolto.** Impostato l'indirizzo personale a livello di
+repository (`git config user.email`, senza `--global`), prima del primo commit.
+Il globale è stato lasciato invariato di proposito: cambiarlo avrebbe fatto
+firmare con l'indirizzo personale anche i repository di lavoro sulla stessa
+macchina.
+
+**Lezione.** Git ha una configurazione a livelli: sistema, utente (`--global`),
+repository. Il livello più specifico vince. Su una macchina che ospita sia
+progetti di lavoro sia progetti personali, l'identità va impostata **per
+repository**, non globalmente. E va fatto **prima** del primo commit: correggere
+l'autore dopo significa riscrivere la storia con `git rebase` o
+`git filter-branch`, e se il repo è già stato pubblicato diventa una rogna vera.
+
+---
+
+## 6. Costringere l'AI a rispondere in un formato preciso
+
+**Quando:** Task 2.
+
+**Cosa è successo.** Lo schema dei dati è definito una volta sola con Zod, ma va
+mandato anche al modello per vincolarne la risposta. Zod sa convertirsi in JSON
+Schema — solo che Gemini accetta soltanto un sottoinsieme di JSON Schema
+(`type`, `properties`, `items`, `enum`, `required`) e la conversione automatica
+produce anche altre chiavi (`$schema`, `pattern`, `additionalProperties`).
+
+**Come è stato risolto.** Una funzione che parte dalla conversione automatica e
+tiene solo le chiavi ammesse, più due test che verificano il risultato: uno che
+tutte le categorie ammesse compaiano nello schema, uno che le chiavi non
+supportate non ci siano.
+
+**Lezione.** La regola in gioco è **una sola fonte di verità**: lo schema si
+scrive in un posto solo, tutto il resto si deriva. L'alternativa — mantenere a
+mano due definizioni allineate — funziona finché qualcuno aggiunge un campo in
+una sola delle due, e quel giorno il bug è silenzioso. Vale anche il rovescio:
+il secondo test è più importante del primo, perché verifica un'**assenza**, e le
+assenze sono ciò che nessuno controlla mai a occhio.
