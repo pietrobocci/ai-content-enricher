@@ -373,3 +373,69 @@ obbedienza cieca si rompe al primo scostamento dalla realtà. Un piano che dice
 *"in questo punto la realtà potrebbe essere diversa: ecco come decidere"* regge.
 La differenza non è nella precisione del piano — è nel fatto che preveda i punti
 in cui sarà sbagliato.
+
+---
+
+## 12. Quattro sorprese di una libreria nuova, e come si scoprono
+
+**Quando:** Task 7, l'implementazione vera del database.
+
+La voce 11 raccontava la scoperta che Prisma era passato alla versione 7. Questa
+racconta cosa è successo scrivendo il codice, perché ogni singolo scarto insegna
+qualcosa di diverso.
+
+### Il client generato non aveva una porta d'ingresso
+
+Prisma genera il codice del client in una cartella del progetto. Di solito
+esiste un file `index` che dice "importa da qui". In Prisma 7 quella cartella
+non ha né `index.ts` né `package.json`: il percorso giusto è direttamente
+`client.ts`, e a dirlo è un commento **dentro il file stesso**.
+
+*Lezione:* quando un import non si risolve, aprire la cartella generata e
+guardare cosa c'è dentro batte qualunque tentativo a memoria. Il codice generato
+spesso si documenta da solo, in un commento che nessuno legge.
+
+### Il file di configurazione non configurava tutto
+
+`prisma7.config.ts` contiene l'indirizzo del database — ma serve **solo agli
+strumenti da riga di comando**. Il client che gira dentro l'applicazione non lo
+legge, e in Prisma 7 pretende un "driver adapter" esplicito: un pacchetto
+separato che sa parlare con SQLite.
+
+*Lezione:* "c'è un file di configurazione" non significa "tutto legge quel
+file". Vale la pena chiedersi *chi* legge una configurazione, non solo cosa
+contiene. Qui i lettori erano due, con bisogni diversi.
+
+### Un'opzione della riga di comando non esisteva più
+
+Il comando previsto dal piano usava `--skip-generate`. In Prisma 7 quel flag è
+stato rimosso, e il comando fallisce.
+
+*Lezione:* le opzioni della riga di comando spariscono come le funzioni. Quando
+un comando copiato da una guida non parte, leggere l'errore prima di sospettare
+il proprio ambiente.
+
+### I percorsi relativi partivano da un posto inatteso
+
+Questo è il più insidioso dei quattro. Il database di sviluppo e quello di test
+sono due file distinti, e i test devono usare **solo** il secondo. I percorsi
+erano scritti come `file:./dev.db` e `file:./test.db`, cioè relativi — e la
+domanda è: relativi a cosa?
+
+La risposta si è rivelata: **alla cartella dove sta il file di configurazione**,
+la radice del progetto, non alla cartella dello schema come si sarebbe potuto
+supporre. Con la supposizione sbagliata i due database sarebbero finiti in
+posizioni diverse da quelle attese, e i test avrebbero potuto scrivere nel
+database di sviluppo credendo di usarne un altro.
+
+Non è stato dedotto: è stato **verificato guardando dove il file compariva
+davvero** dopo il primo comando. Poi tutti i percorsi sono stati resi espliciti
+(`file:./prisma/dev.db`, `file:./prisma/test.db`), e la separazione è stata
+provata lanciando la suite due volte di fila e confrontando l'impronta MD5 del
+database di sviluppo prima e dopo: invariata.
+
+*Lezione, la più importante di tutta la voce:* un percorso relativo è ambiguo
+finché non sai rispetto a **cosa** è relativo, e la risposta dipende da chi lo
+interpreta — la shell, un file di configurazione, un modulo. Quando la
+differenza tra due ipotesi è "i test cancellano i dati veri", non si suppone: si
+guarda. E si verifica con una misura, non con un'impressione.
