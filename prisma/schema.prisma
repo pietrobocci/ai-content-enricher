@@ -11,3 +11,18 @@ generator client {
 datasource db {
   provider = "sqlite"
 }
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  // SQLite non ha un tipo array: i tag sono salvati come stringa JSON.
+  // Su PostgreSQL si userebbe un array nativo.
+  tags        String
+  imagePath   String
+  // La proposta originale dell'AI, prima delle correzioni umane.
+  aiDraftJson String
+  model       String
+  createdAt   DateTime @default(now())
+}
