@@ -84,7 +84,20 @@ export function createGeminiProvider(opts: GeminiOptions): LlmProvider {
         continue;
       }
 
-      const testo = estraiTesto(await risposta.json());
+      let payload: unknown;
+      try {
+        payload = await risposta.json();
+      } catch {
+        // Un 200 con un corpo illeggibile non è un problema di trasporto
+        // che si risolve ritentando: è una risposta fuori contratto.
+        return err({
+          type: "bad_response",
+          message: "il corpo della risposta non è JSON valido",
+          retryable: false,
+        });
+      }
+
+      const testo = estraiTesto(payload);
       if (testo === null) {
         return err({
           type: "bad_response",

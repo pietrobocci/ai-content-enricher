@@ -120,4 +120,27 @@ describe("createGeminiProvider", () => {
     expect(esito.ok).toBe(false);
     if (!esito.ok) expect(esito.error.type).toBe("bad_response");
   });
+
+  it("segnala come malformata una risposta 200 con corpo non JSON", async () => {
+    const corpoRotto = {
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw new SyntaxError("Unexpected end of JSON input");
+      },
+      text: async () => "",
+    } as unknown as Response;
+    const fetchFinto = vi.fn().mockResolvedValue(corpoRotto);
+    const provider = createGeminiProvider({ apiKey: "k", fetchImpl: fetchFinto, sleep: async () => {} });
+
+    const esito = await provider.generate(richiesta);
+
+    expect(esito.ok).toBe(false);
+    if (!esito.ok) {
+      expect(esito.error.type).toBe("bad_response");
+      expect(esito.error.retryable).toBe(false);
+    }
+    // Non ritentabile: una sola chiamata, nessun retry.
+    expect(fetchFinto).toHaveBeenCalledTimes(1);
+  });
 });
