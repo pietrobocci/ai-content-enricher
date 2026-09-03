@@ -49,3 +49,9 @@ next-env.d.ts
 /prisma/*.db-journal
 
 /src/generated/prisma
+
+# artefatti locali di editor e agenti
+/.agents
+/.claude
+/.windsurf
+/skills-lock.json

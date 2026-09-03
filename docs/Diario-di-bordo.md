@@ -333,3 +333,43 @@ Elencare i file esplicitamente in `git add` è più noioso e più corretto. E va
 la regola generale: un working tree condiviso è uno stato condiviso, con tutti i
 problemi degli stati condivisi. Il fatto che i file toccati fossero diversi non
 bastava: **l'area di staging è comunque una sola.**
+
+---
+
+## 11. La libreria era cambiata di versione maggiore
+
+**Quando:** Task 7, subito dopo l'installazione.
+
+**Cosa è successo.** Il piano descriveva come configurare Prisma nel dettaglio,
+riga per riga. `npm install prisma` ha installato la versione **7**, e quasi
+tutte quelle righe erano già superate:
+
+| Nel piano | In Prisma 7 |
+|---|---|
+| `provider = "prisma-client-js"` | `provider = "prisma-client"`, con `output` obbligatorio |
+| Client importato da `@prisma/client` | Client generato in una cartella del progetto |
+| `url` dentro il blocco `datasource` | `url` in un file di configurazione separato |
+| Nessun file di configurazione | `prisma7.config.ts` alla radice |
+
+**Perché succede.** Un piano scritto oggi descrive le librerie come sono oggi.
+Un `^` in `package.json` significa "prendi l'ultima compatibile", e le versioni
+maggiori cambiano le regole apposta. Tra la scrittura di un piano e la sua
+esecuzione può passare abbastanza tempo perché il mondo si sposti.
+
+**Come è stato gestito.** Le istruzioni date a chi implementava contenevano già
+una clausola per questo caso: *"se la CLI rifiuta la sintassi del piano, segui
+quello che dice la CLI, tieni la modifica più piccola possibile, e documenta cosa
+hai cambiato e perché — non combattere con lo strumento"*. Quindi lo scarto non
+è diventato un blocco: è diventato una nota.
+
+**Lezione, in due parti.** La prima riguarda le versioni: fissare le versioni
+(`npm ci`, versioni esatte invece di `^`) rende un progetto riproducibile, e
+quando un tutorial o un piano "non funziona più" la causa è quasi sempre questa.
+Vale la pena verificare la versione installata *prima* di dare la colpa al
+proprio codice.
+
+La seconda riguarda come si scrivono le istruzioni: un piano che pretende
+obbedienza cieca si rompe al primo scostamento dalla realtà. Un piano che dice
+*"in questo punto la realtà potrebbe essere diversa: ecco come decidere"* regge.
+La differenza non è nella precisione del piano — è nel fatto che preveda i punti
+in cui sarà sbagliato.

@@ -17,8 +17,8 @@ Branch di lavoro: **`feat/mvp`** (non `master`). Nessun push, nessun remote.
 | 3 — Costruttore del prompt | ✅ completo, dopo 1 giro di correzioni |
 | 4 — Tipo `Result` + provider Gemini | ✅ completo, dopo 1 giro di correzioni |
 | 5 — Orchestrazione dell'arricchimento | ✅ completo, review pulita |
-| 6 — Validazione del file caricato | implementato, review in corso |
-| 7 — Database (Prisma + SQLite) | da fare |
+| 6 — Validazione del file caricato | ✅ completo, review pulita |
+| 7 — Database (Prisma + SQLite) | **in corso, interrotto** — vedi sotto |
 | 8 — Endpoint di arricchimento | da fare |
 | 9 — Endpoint dei prodotti | da fare |
 | 10 — Pagina di caricamento e revisione | da fare |
@@ -26,6 +26,44 @@ Branch di lavoro: **`feat/mvp`** (non `master`). Nessun push, nessun remote.
 | 12 — Prova reale, test di contratto, README | da fare |
 
 Suite di test: **35/35 verdi**. `npx tsc --noEmit` pulito. `npm run build` verificata al Task 1.
+
+---
+
+## Ripartire dal Task 7 — leggere prima di scrivere codice
+
+Il Task 7 è stato interrotto **dopo l'installazione di Prisma e prima di
+scrivere il modello dati**. Lo stato parziale è già committato (`444889b`), la
+suite è rimasta a 35/35 perché nessun codice importa ancora Prisma.
+
+**Attenzione: è stato installato Prisma 7.10.0, che diverge dal piano.** Il
+piano è stato scritto per Prisma 6 e il suo Task 7 non funziona così com'è.
+Differenze reali riscontrate:
+
+| Il piano dice | Prisma 7 fa |
+|---|---|
+| `generator client { provider = "prisma-client-js" }` | `provider = "prisma-client"` con `output` **obbligatorio** |
+| Client importato da `@prisma/client` | Client generato in `src/generated/prisma`, si importa da lì |
+| `url = env("DATABASE_URL")` dentro il `datasource` | Nessun `url` nello schema: sta in `prisma7.config.ts` |
+| Nessun file di configurazione separato | `prisma7.config.ts` alla radice, che importa `dotenv/config` |
+
+Conseguenze pratiche per chi riprende:
+
+1. `src/lib/db.ts` deve importare `PrismaClient` da `@/generated/prisma`
+   (o dal percorso relativo corrispondente), **non** da `@prisma/client`.
+2. Serve installare `dotenv`, che `prisma7.config.ts` importa.
+3. Il modello `Product` va aggiunto a `prisma/schema.prisma`, che al momento
+   contiene solo il blocco generato da `prisma init`.
+4. `src/generated/prisma` è ignorato da git: chi clona il repo deve eseguire
+   `npx prisma generate` prima che il progetto compili.
+5. Il resto del Task 7 (test, `products.ts`, database di test separato,
+   `vitest.config.ts` con `env` e `globalSetup`) è ancora da fare come da piano.
+
+Due strade legittime per riprendere: adattare il Task 7 a Prisma 7 seguendo la
+tabella qui sopra, oppure — se si preferisce restare aderenti al piano —
+disinstallare e fissare Prisma 6 (`npm install -D prisma@^6` e
+`npm install @prisma/client@^6`), rimuovendo `prisma7.config.ts`. La prima
+strada è preferibile: usare la versione corrente è più utile da imparare e da
+mostrare.
 
 ---
 
