@@ -93,6 +93,12 @@ davanti allo schermo.
    ritrovarla nel catalogo su `/`. È il passo che chiude il Task 12.
 5. Annotare in `docs/Diario-di-bordo.md` qualunque intoppo emerga dalla prova.
 
+Già verificato **senza** chiave, dal browser sull app avviata: le due pagine si
+renderizzano, `/api/products` rifiuta con 400 in italiano un percorso immagine
+fuori da `/uploads` e una categoria inventata senza creare righe, accetta un
+corpo valido con 201 e lo rilegge con i tag come array. Nessun errore nei log
+del server.
+
 ### Comandi
 
 ```powershell
