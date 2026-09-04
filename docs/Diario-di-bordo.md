@@ -439,3 +439,63 @@ finché non sai rispetto a **cosa** è relativo, e la risposta dipende da chi lo
 interpreta — la shell, un file di configurazione, un modulo. Quando la
 differenza tra due ipotesi è "i test cancellano i dati veri", non si suppone: si
 guarda. E si verifica con una misura, non con un'impressione.
+
+---
+
+## 13. La correzione della correzione
+
+**Quando:** Task 12, l'ultimo.
+
+Questa voce è il seguito della numero 4, e insieme dicono più di quanto dica
+ciascuna da sola.
+
+**Il ripasso.** Il piano prevedeva questo comando per lanciare il test di
+contratto, l'unico che chiama davvero l'API:
+
+```
+vitest run tests/gemini.contract.test.ts --exclude ''
+```
+
+L'idea era annullare, con una stringa vuota, l'esclusione dei file `*.contract.test.ts`
+configurata per la suite normale. Il difetto — trovato leggendo, prima di
+scrivere codice — era che una stringa vuota non sovrascrive in modo affidabile
+la configurazione: il comando poteva uscire con successo **senza eseguire nulla**.
+
+La correzione decisa allora era passare un'esclusione esplicita e innocua:
+
+```
+vitest run --exclude "node_modules/**" tests/gemini.contract.test.ts
+```
+
+**Cosa è successo davvero.** Eseguendolo, il risultato è stato
+`No test files found`. La correzione aveva lo stesso identico difetto
+dell'originale.
+
+**Perché.** Vitest **non sostituisce** l'esclusione della configurazione con
+quella passata da riga di comando: le **unisce**. Qualunque cosa si passi a
+`--exclude`, l'esclusione dei file di contratto resta attiva, e il file
+richiesto esplicitamente viene comunque scartato. Il comando termina con
+successo perché non ha nulla da fallire.
+
+**Come è stato risolto.** Con un file di configurazione separato per il test di
+contratto, che non contiene quell'esclusione. Il comando ora raccoglie davvero
+il file — e infatti **fallisce**, perché manca la chiave API. Quel fallimento è
+la prova che funziona.
+
+**Le lezioni, e sono tre.**
+
+La prima: **una diagnosi corretta non garantisce una cura corretta.** Il difetto
+era stato individuato bene e descritto bene. La correzione era comunque
+sbagliata, perché si basava su un'ipotesi non verificata su come lo strumento
+tratta le opzioni da riga di comando.
+
+La seconda: **il comportamento di uno strumento va verificato, non dedotto.**
+"Sovrascrive" e "unisce" sono due comportamenti plausibili, la documentazione non
+lo urla, e la differenza tra i due qui era tutto.
+
+La terza, la più utile: **il modo di verificare un test è guardare quanti test ha
+eseguito.** Non se il comando è uscito con successo. In questo caso specifico la
+verifica era ancora più netta: il test *doveva fallire*, perché la chiave manca —
+e un fallimento per il motivo giusto vale più di un successo che non significa
+niente. Un comando verde che ha eseguito zero test è il modo più elegante di
+mentire a sé stessi.
