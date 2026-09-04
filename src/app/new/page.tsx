@@ -20,6 +20,7 @@ export default function NuovoProdotto() {
   const [imagePath, setImagePath] = useState("");
   const [model, setModel] = useState("");
   const [aiDraftJson, setAiDraftJson] = useState("");
+  const [tagsTesto, setTagsTesto] = useState("");
   const [errore, setErrore] = useState("");
   const [inCorso, setInCorso] = useState(false);
 
@@ -30,22 +31,30 @@ export default function NuovoProdotto() {
 
     const form = new FormData();
     form.append("image", file);
-    if (hint.trim()) form.append("hint", hint);
+    if (hint.trim()) form.append("hint", hint.trim());
 
-    const risposta = await fetch("/api/enrich", { method: "POST", body: form });
-    const dati = await risposta.json();
-    setInCorso(false);
+    try {
+      const risposta = await fetch("/api/enrich", { method: "POST", body: form });
+      const dati = await risposta.json();
 
-    if (!risposta.ok) {
-      setErrore(dati.error ?? "errore sconosciuto");
-      return;
+      if (!risposta.ok) {
+        setErrore(dati.error ?? "errore sconosciuto");
+        return;
+      }
+
+      setDraft(dati.draft);
+      setImagePath(dati.imagePath);
+      setModel(dati.model);
+      // Conserviamo la proposta originale prima di qualunque correzione.
+      setAiDraftJson(JSON.stringify(dati.draft));
+      setTagsTesto(dati.draft.tags.join(", "));
+    } catch {
+      // Rete caduta o risposta non JSON: senza questo ramo la pagina
+      // resterebbe bloccata sul bottone disabilitato, senza dire niente.
+      setErrore("errore di rete: controlla la connessione e riprova");
+    } finally {
+      setInCorso(false);
     }
-
-    setDraft(dati.draft);
-    setImagePath(dati.imagePath);
-    setModel(dati.model);
-    // Conserviamo la proposta originale prima di qualunque correzione.
-    setAiDraftJson(JSON.stringify(dati.draft));
   }
 
   async function salva() {
@@ -53,28 +62,40 @@ export default function NuovoProdotto() {
     setInCorso(true);
     setErrore("");
 
-    const risposta = await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: draft.title,
-        description: draft.description,
-        category: draft.category,
-        tags: draft.tags,
-        imagePath,
-        aiDraftJson,
-        model,
-      }),
-    });
+    const tags = tagsTesto
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
-    setInCorso(false);
-    if (!risposta.ok) {
-      const dati = await risposta.json();
-      setErrore(dati.error ?? "salvataggio fallito");
-      return;
+    try {
+      const risposta = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: draft.title,
+          description: draft.description,
+          category: draft.category,
+          tags,
+          imagePath,
+          aiDraftJson,
+          model,
+        }),
+      });
+
+      if (!risposta.ok) {
+        const dati = await risposta.json();
+        setErrore(dati.error ?? "salvataggio fallito");
+        return;
+      }
+
+      router.push("/");
+    } catch {
+      // Rete caduta o risposta non JSON: senza questo ramo la pagina
+      // resterebbe bloccata sul bottone disabilitato, senza dire niente.
+      setErrore("errore di rete: controlla la connessione e riprova");
+    } finally {
+      setInCorso(false);
     }
-
-    router.push("/");
   }
 
   return (
@@ -159,13 +180,8 @@ export default function NuovoProdotto() {
           <label className="block text-sm font-medium">Tag (separati da virgola)</label>
           <input
             className="w-full rounded border p-2"
-            value={draft.tags.join(", ")}
-            onChange={(e) =>
-              setDraft({
-                ...draft,
-                tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean),
-              })
-            }
+            value={tagsTesto}
+            onChange={(e) => setTagsTesto(e.target.value)}
           />
 
           <button

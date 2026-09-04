@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -25,8 +26,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <nav className="border-b p-4">
-          <a href="/" className="mr-4 font-semibold">Catalogo</a>
-          <a href="/new" className="text-blue-700">Nuovo prodotto</a>
+          <Link href="/" className="mr-4 font-semibold">Catalogo</Link>
+          <Link href="/new" className="text-blue-700">Nuovo prodotto</Link>
         </nav>
         {children}
       </body>
