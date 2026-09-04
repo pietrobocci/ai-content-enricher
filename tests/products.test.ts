@@ -12,15 +12,27 @@ const nuovoProdotto = {
   model: "gemini:test",
 };
 
+/**
+ * createProduct e listProducts restituiscono un Result: qui il caso di
+ * errore non e' quello che stiamo verificando, quindi lo trasformiamo in
+ * un fallimento del test e proseguiamo con i dati.
+ */
+async function elencoOppureFallisci() {
+  const esito = await listProducts();
+  if (!esito.ok) throw new Error(`listProducts ha fallito: ${esito.error.message}`);
+  return esito.data;
+}
+
 describe("prodotti", () => {
   beforeEach(async () => {
     await prisma.product.deleteMany();
   });
 
   it("salva un prodotto e lo rilegge", async () => {
-    await createProduct(nuovoProdotto);
+    const salvato = await createProduct(nuovoProdotto);
+    expect(salvato.ok).toBe(true);
 
-    const elenco = await listProducts();
+    const elenco = await elencoOppureFallisci();
 
     expect(elenco).toHaveLength(1);
     expect(elenco[0].title).toBe(nuovoProdotto.title);
@@ -29,7 +41,7 @@ describe("prodotti", () => {
   it("restituisce i tag come array, non come stringa", async () => {
     await createProduct(nuovoProdotto);
 
-    const elenco = await listProducts();
+    const elenco = await elencoOppureFallisci();
 
     expect(Array.isArray(elenco[0].tags)).toBe(true);
     expect(elenco[0].tags).toEqual(["running", "sport", "scarpe"]);
@@ -38,7 +50,7 @@ describe("prodotti", () => {
   it("conserva la bozza originale dell'AI", async () => {
     await createProduct(nuovoProdotto);
 
-    const elenco = await listProducts();
+    const elenco = await elencoOppureFallisci();
 
     expect(elenco[0].aiDraftJson).toBe(nuovoProdotto.aiDraftJson);
   });
@@ -47,7 +59,7 @@ describe("prodotti", () => {
     await createProduct({ ...nuovoProdotto, title: "Primo prodotto" });
     await createProduct({ ...nuovoProdotto, title: "Secondo prodotto" });
 
-    const elenco = await listProducts();
+    const elenco = await elencoOppureFallisci();
 
     expect(elenco[0].title).toBe("Secondo prodotto");
   });

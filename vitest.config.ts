@@ -11,6 +11,10 @@ export default defineConfig({
     // con Prisma 7 il percorso e' relativo alla radice del progetto, non a prisma/.
     env: { DATABASE_URL: "file:./prisma/test.db" },
     globalSetup: ["tests/setup/prepara-db.ts"],
+    // Piu' file di test scrivono sullo stesso file SQLite (e lo svuotano
+    // fra un test e l'altro): eseguendoli in parallelo si darebbero
+    // fastidio a vicenda, quindi qui i file girano uno alla volta.
+    fileParallelism: false,
   },
   resolve: {
     alias: { "@": path.resolve(process.cwd(), "src") },

@@ -1,3 +1,9 @@
+// Carica .env dentro process.env prima che Vitest parta. Sembra ridondante,
+// ma non lo e': il `loadEnv` di Vite legge .env in un oggetto a parte e
+// restituisce solo le chiavi con prefisso VITE_, quindi senza questa riga
+// GEMINI_API_KEY resterebbe undefined e il test di contratto fallirebbe
+// anche con la chiave giusta nel file. prisma7.config.ts fa lo stesso.
+import "dotenv/config";
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 

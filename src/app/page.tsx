@@ -6,7 +6,22 @@ import { listProducts } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 export default async function Catalogo() {
-  const prodotti = await listProducts();
+  const esito = await listProducts();
+
+  // Il database puo' mancare o essere illeggibile: si mostra un messaggio,
+  // non una schermata di errore di Next.
+  if (!esito.ok) {
+    return (
+      <main className="mx-auto max-w-3xl p-6">
+        <h1 className="mb-4 text-2xl font-bold">Catalogo</h1>
+        <p className="rounded border border-red-300 bg-red-50 p-3 text-red-700">
+          {esito.error.message}
+        </p>
+      </main>
+    );
+  }
+
+  const prodotti = esito.data;
 
   if (prodotti.length === 0) {
     return (

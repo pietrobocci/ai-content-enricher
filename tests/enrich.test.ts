@@ -95,4 +95,21 @@ describe("enrichImage", () => {
 
     expect(generate.mock.calls[0][0].prompt).toContain("borsa in pelle vintage");
   });
+
+  it("non moltiplica i ritentativi: un errore di trasporto ferma subito l'arricchimento", async () => {
+    const generate = vi
+      .fn()
+      .mockResolvedValue(err({ type: "network", message: "timeout", retryable: true }));
+    const provider: LlmProvider = { name: "finto-in-rete", generate };
+
+    const esito = await enrichImage(input, provider, { maxSchemaRetries: 1 });
+
+    expect(esito.ok).toBe(false);
+    // Il tetto composto: enrichImage puo' chiamare il provider al massimo
+    // maxSchemaRetries + 1 = 2 volte, e ogni chiamata vale al massimo
+    // maxRetries + 1 = 2 richieste HTTP, cioe' 4 chiamate fatturate nel
+    // caso peggiore. Su un errore di trasporto si ferma alla prima:
+    // riformulare il prompt non ripara la rete.
+    expect(generate).toHaveBeenCalledTimes(1);
+  });
 });

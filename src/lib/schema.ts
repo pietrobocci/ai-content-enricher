@@ -16,16 +16,34 @@ export const CATEGORIES = [
 
 export const CONFIDENCE_LEVELS = ["alta", "media", "bassa"] as const;
 
-/** La forma esatta che la risposta del modello deve rispettare. */
+/**
+ * La forma esatta che la risposta del modello deve rispettare.
+ *
+ * Ogni regola porta il proprio messaggio in italiano: i messaggi di Zod
+ * finiscono nell'interfaccia e nel prompt di correzione, e di default
+ * sarebbero in inglese.
+ */
 export const productDraftSchema = z.object({
-  title: z.string().min(3).max(60),
-  description: z.string().min(20).max(400),
+  title: z
+    .string()
+    .min(3, "il titolo deve avere almeno 3 caratteri")
+    .max(60, "il titolo non puo' superare 60 caratteri"),
+  description: z
+    .string()
+    .min(20, "la descrizione deve avere almeno 20 caratteri")
+    .max(400, "la descrizione non puo' superare 400 caratteri"),
   tags: z
-    .array(z.string().min(2).max(20).regex(/^[a-z0-9à-öø-ÿ -]+$/, "solo minuscole (accentate ammesse), cifre, spazi e trattini"))
-    .min(3)
-    .max(6),
-  category: z.enum(CATEGORIES),
-  confidence: z.enum(CONFIDENCE_LEVELS),
+    .array(
+      z
+        .string()
+        .min(2, "ogni tag deve avere almeno 2 caratteri")
+        .max(20, "ogni tag non puo' superare 20 caratteri")
+        .regex(/^[a-z0-9à-öø-ÿ -]+$/, "solo minuscole (accentate ammesse), cifre, spazi e trattini")
+    )
+    .min(3, "servono almeno 3 tag")
+    .max(6, "i tag non possono essere piu' di 6"),
+  category: z.enum(CATEGORIES, "categoria non ammessa: usare una di quelle previste"),
+  confidence: z.enum(CONFIDENCE_LEVELS, "confidenza non ammessa: usare alta, media o bassa"),
 });
 
 export type ProductDraft = z.infer<typeof productDraftSchema>;

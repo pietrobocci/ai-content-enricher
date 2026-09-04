@@ -2,7 +2,7 @@
 
 Documento di ripresa: serve a ricominciare da dove si era rimasti, anche a
 distanza di tempo o da una sessione completamente nuova. Aggiornato al
-**3 settembre 2026**.
+**4 settembre 2026**.
 
 ---
 
@@ -18,26 +18,29 @@ Branch di lavoro: **`feat/mvp`** (non `master`). Nessun push, nessun remote.
 | 4 — Tipo `Result` + provider Gemini | ✅ completo, dopo 1 giro di correzioni |
 | 5 — Orchestrazione dell'arricchimento | ✅ completo, review pulita |
 | 6 — Validazione del file caricato | ✅ completo, review pulita |
-| 7 — Database (Prisma + SQLite) | **in corso, interrotto** — vedi sotto |
-| 8 — Endpoint di arricchimento | da fare |
-| 9 — Endpoint dei prodotti | da fare |
-| 10 — Pagina di caricamento e revisione | da fare |
-| 11 — Pagina catalogo | da fare |
-| 12 — Prova reale, test di contratto, README | da fare |
+| 7 — Database (Prisma 7 + SQLite) | ✅ completo |
+| 8 — Endpoint di arricchimento | ✅ completo |
+| 9 — Endpoint dei prodotti | ✅ completo |
+| 10 — Pagina di caricamento e revisione | ✅ completo |
+| 11 — Pagina catalogo | ✅ completo |
+| 12 — Test di contratto e README | ✅ completo; resta la **prova reale**, che richiede una chiave API |
 
-Suite di test: **35/35 verdi**. `npx tsc --noEmit` pulito. `npm run build` verificata al Task 1.
+**Tutti e dodici i task sono implementati e revisionati**, più un giro finale di
+correzioni sull'intero branch: attesa rispettata sul 429 (`Retry-After`),
+`Result` anche nel livello database, messaggi di Zod in italiano, tetto ai
+ritentativi combinati, test dei due endpoint.
+
+Suite di test: **54/54 verdi** (i test di contratto sono esclusi: chiamano la
+rete). `npx tsc --noEmit` pulito, `npm run build` riuscita, `npm run lint` senza
+errori — restano 2 warning `no-img-element`, accettati: `next/image` non serve
+per immagini locali già ridimensionate.
 
 ---
 
-## Ripartire dal Task 7 — leggere prima di scrivere codice
+## Prisma 7, non Prisma 6 — differenze rispetto al piano
 
-Il Task 7 è stato interrotto **dopo l'installazione di Prisma e prima di
-scrivere il modello dati**. Lo stato parziale è già committato (`444889b`), la
-suite è rimasta a 35/35 perché nessun codice importa ancora Prisma.
-
-**Attenzione: è stato installato Prisma 7.10.0, che diverge dal piano.** Il
-piano è stato scritto per Prisma 6 e il suo Task 7 non funziona così com'è.
-Differenze reali riscontrate:
+Il piano è stato scritto per Prisma 6, il progetto usa Prisma 7.10.0. Le
+differenze restano utili a chi legge il piano:
 
 | Il piano dice | Prisma 7 fa |
 |---|---|
@@ -46,24 +49,8 @@ Differenze reali riscontrate:
 | `url = env("DATABASE_URL")` dentro il `datasource` | Nessun `url` nello schema: sta in `prisma7.config.ts` |
 | Nessun file di configurazione separato | `prisma7.config.ts` alla radice, che importa `dotenv/config` |
 
-Conseguenze pratiche per chi riprende:
-
-1. `src/lib/db.ts` deve importare `PrismaClient` da `@/generated/prisma`
-   (o dal percorso relativo corrispondente), **non** da `@prisma/client`.
-2. Serve installare `dotenv`, che `prisma7.config.ts` importa.
-3. Il modello `Product` va aggiunto a `prisma/schema.prisma`, che al momento
-   contiene solo il blocco generato da `prisma init`.
-4. `src/generated/prisma` è ignorato da git: chi clona il repo deve eseguire
-   `npx prisma generate` prima che il progetto compili.
-5. Il resto del Task 7 (test, `products.ts`, database di test separato,
-   `vitest.config.ts` con `env` e `globalSetup`) è ancora da fare come da piano.
-
-Due strade legittime per riprendere: adattare il Task 7 a Prisma 7 seguendo la
-tabella qui sopra, oppure — se si preferisce restare aderenti al piano —
-disinstallare e fissare Prisma 6 (`npm install -D prisma@^6` e
-`npm install @prisma/client@^6`), rimuovendo `prisma7.config.ts`. La prima
-strada è preferibile: usare la versione corrente è più utile da imparare e da
-mostrare.
+`src/generated/prisma` è ignorato da git: **chi clona il repo deve eseguire
+`npx prisma generate` prima che il progetto compili.**
 
 ---
 
@@ -85,35 +72,39 @@ sequenza.
 
 ---
 
-## Riprendere il lavoro
+## Cosa resta da fare
 
-1. Leggere la specifica e il piano.
-2. Leggere il registro di avanzamento: l'ultima riga `Task <N>: complete` dice
-   dove si era arrivati. I task senza quella riga non sono chiusi.
-3. Riprendere dal primo task non completato, seguendo il suo testo nel piano.
+Il codice è finito: quello che manca richiede una chiave API e una persona
+davanti allo schermo.
 
-Il piano contiene, per ogni task, il file di test completo e il file di
-implementazione completo: non serve reinventare nulla. L'ordine dei passi è il
-processo — prima il test che fallisce, poi l'implementazione.
+1. **Ottenere una chiave API gratuita di Google Gemini** da
+   <https://aistudio.google.com/apikey>, poi copiare `.env.example` in `.env` e
+   riempire `GEMINI_API_KEY`.
+2. **Verificare che il modello sia ancora disponibile sul piano gratuito.** Il
+   provider usa `gemini-2.5-flash` (costante `MODELLO_DEFAULT` in
+   `src/lib/provider.ts`): i nomi dei modelli gratuiti cambiano nel tempo, se
+   quello non esiste più va aggiornata quella costante.
+3. **Eseguire il test di contratto:** `npm run test:contract`. Chiama la rete
+   davvero e consuma una richiesta di quota. Verifica solo che la risposta sia
+   JSON con i cinque campi previsti; le regole di contenuto restano coperte
+   offline da `tests/schema.test.ts`.
+4. **Fare la prova manuale da capo a fondo:** `npm run dev`, caricare una foto
+   vera su `/new`, controllare la bozza proposta, correggerla, salvarla e
+   ritrovarla nel catalogo su `/`. È il passo che chiude il Task 12.
+5. Annotare in `docs/Diario-di-bordo.md` qualunque intoppo emerga dalla prova.
 
 ### Comandi
 
-```bash
-npm install          # se node_modules manca
-npm test             # suite completa, offline, senza chiave API
-npx tsc --noEmit     # controllo dei tipi
-npm run dev          # avvia l'app in locale
+```powershell
+npm install           # se node_modules manca
+npx prisma generate   # se src/generated/prisma manca
+npm test              # suite completa, offline, senza chiave API
+npx tsc --noEmit      # controllo dei tipi
+npm run lint          # ESLint
+npm run build         # build di produzione
+npm run dev           # avvia l'app in locale
+npm run test:contract # chiama Gemini davvero: serve GEMINI_API_KEY in .env
 ```
-
----
-
-## Cosa serve ancora dall'esterno
-
-Una **chiave API gratuita di Google Gemini**, da <https://aistudio.google.com/apikey>.
-Serve solo dal Task 12 in poi (la prova reale e il test di contratto): i task da
-1 a 11 girano e si testano senza.
-
-Quando la si ha: copiare `.env.example` in `.env` e riempire `GEMINI_API_KEY`.
 
 ---
 
@@ -137,8 +128,9 @@ Quando la si ha: copiare `.env.example` in `.env` e riempire `GEMINI_API_KEY`.
 
 ## Problemi noti, non ancora affrontati
 
-Sono tutti registrati anche nel registro di avanzamento come *minor (deferred)*,
-e vanno ripresi nella revisione finale:
+Sono tutti registrati anche nel registro di avanzamento come *minor (deferred)*.
+La revisione finale li ha valutati e lasciati aperti di proposito: nessuno si
+manifesta con il codice di oggi, e vanno ripresi solo se il progetto cresce.
 
 - Il filtro che adatta lo schema Zod al formato di Gemini non gestisce le chiavi
   di composizione (`anyOf`) che comparirebbero se un campo diventasse

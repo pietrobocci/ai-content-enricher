@@ -14,7 +14,9 @@ export function validateImage(bytes: Uint8Array): Result<{ mimeType: string }> {
   if (bytes.length > MAX_IMAGE_BYTES) {
     return err({
       type: "invalid_input",
-      message: "immagine troppo grande: il limite e' 5 MB",
+      // Il limite si legge dalla costante: scritto a mano, il messaggio
+      // resterebbe "5 MB" anche cambiando MAX_IMAGE_BYTES.
+      message: `immagine troppo grande: il limite e' ${MAX_IMAGE_BYTES / (1024 * 1024)} MB`,
       retryable: false,
     });
   }

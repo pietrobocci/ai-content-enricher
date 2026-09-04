@@ -12,12 +12,13 @@ function rispostaGemini(testo: string) {
   } as unknown as Response;
 }
 
-function rispostaErrore(status: number) {
+function rispostaErrore(status: number, corpo?: string, headers?: Record<string, string>) {
   return {
     ok: false,
     status,
+    headers: new Headers(headers ?? {}),
     json: async () => ({}),
-    text: async () => `errore ${status}`,
+    text: async () => corpo ?? `errore ${status}`,
   } as unknown as Response;
 }
 
@@ -141,6 +142,38 @@ describe("createGeminiProvider", () => {
       expect(esito.error.retryable).toBe(false);
     }
     // Non ritentabile: una sola chiamata, nessun retry.
+    expect(fetchFinto).toHaveBeenCalledTimes(1);
+  });
+
+  it("rispetta l'attesa chiesta dal server invece del proprio backoff", async () => {
+    const fetchFinto = vi
+      .fn()
+      .mockResolvedValueOnce(rispostaErrore(429, "quota", { "retry-after": "2" }))
+      .mockResolvedValueOnce(rispostaGemini('{"title":"ok"}'));
+    const attesa = vi.fn().mockResolvedValue(undefined);
+    const provider = createGeminiProvider({ apiKey: "k", fetchImpl: fetchFinto, sleep: attesa });
+
+    const esito = await provider.generate(richiesta);
+
+    expect(esito.ok).toBe(true);
+    // Retry-After: 2 secondi. Senza questo, il provider avrebbe aspettato
+    // i suoi 500 ms e martellato una quota non ancora rigenerata.
+    expect(attesa).toHaveBeenCalledWith(2000);
+  });
+
+  it("tratta il 400 con API_KEY_INVALID come chiave rifiutata, senza ritentare", async () => {
+    const corpo = '{"error":{"code":400,"status":"INVALID_ARGUMENT","message":"API key not valid","details":[{"reason":"API_KEY_INVALID"}]}}';
+    const fetchFinto = vi.fn().mockResolvedValue(rispostaErrore(400, corpo));
+    const provider = createGeminiProvider({ apiKey: "k", fetchImpl: fetchFinto, sleep: async () => {} });
+
+    const esito = await provider.generate(richiesta);
+
+    expect(esito.ok).toBe(false);
+    if (!esito.ok) {
+      expect(esito.error.type).toBe("auth");
+      expect(esito.error.retryable).toBe(false);
+      expect(esito.error.message).toContain("GEMINI_API_KEY");
+    }
     expect(fetchFinto).toHaveBeenCalledTimes(1);
   });
 });

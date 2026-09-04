@@ -13,10 +13,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `dati non validi — ${dettagli}` }, { status: 400 });
   }
 
-  const prodotto = await createProduct(controllo.data);
-  return NextResponse.json({ id: prodotto.id }, { status: 201 });
+  const salvato = await createProduct(controllo.data);
+  if (!salvato.ok) {
+    return NextResponse.json({ error: salvato.error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ id: salvato.data.id }, { status: 201 });
 }
 
 export async function GET() {
-  return NextResponse.json({ products: await listProducts() });
+  const elenco = await listProducts();
+  if (!elenco.ok) {
+    return NextResponse.json({ error: elenco.error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ products: elenco.data });
 }

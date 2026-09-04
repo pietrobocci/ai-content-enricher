@@ -13,7 +13,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const form = await request.formData();
+  // Se il corpo non e' un form multipart, formData() lancia: senza questo
+  // ramo l'utente vedrebbe l'errore grezzo di Next invece di un messaggio.
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return NextResponse.json(
+      { error: "richiesta non valida: serve un form con il campo immagine" },
+      { status: 400 }
+    );
+  }
+
   const file = form.get("image");
   const hint = form.get("hint");
 
