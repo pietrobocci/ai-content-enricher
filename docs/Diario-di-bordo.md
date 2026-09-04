@@ -499,3 +499,56 @@ verifica era ancora più netta: il test *doveva fallire*, perché la chiave manc
 e un fallimento per il motivo giusto vale più di un successo che non significa
 niente. Un comando verde che ha eseguito zero test è il modo più elegante di
 mentire a sé stessi.
+
+---
+
+## 14. Perché serviva una revisione finale, e cosa ha trovato solo lei
+
+**Quando:** alla fine, a progetto completo.
+
+Ogni task era stato revisionato singolarmente e approvato. Poi una revisione
+sull'intero progetto ha trovato nove problemi in più. Non perché le prime
+fossero superficiali: perché guardavano un'altra cosa.
+
+**Il difetto che nessuna revisione per-task poteva vedere.** La specifica
+dice che, di fronte a un errore di quota (429), bisogna rispettare **l'attesa
+indicata dal server**. Il piano, scrivendo il codice del provider, aveva perso
+quella riga: prevedeva un'attesa a crescita esponenziale e basta. Ogni revisione
+per-task confrontava il codice **col piano**, e col piano il codice era perfetto.
+Solo la revisione finale, che legge la *specifica* come autorità, ha visto il
+requisito mancante.
+
+*Lezione:* quando si controlla un lavoro contro un documento intermedio, si
+eredita ogni errore di quel documento. Serve almeno un controllo che risalga
+alla fonte.
+
+**Il difetto che stava nello spazio tra due task.** Il file degli stili globali,
+generato al primo task, conteneva ancora un blocco che rende lo sfondo quasi nero
+su un computer in tema scuro. Le pagine, scritte nei task 10 e 11, usano colori
+pensati per fondo chiaro. Ognuno dei tre file, preso da solo, è corretto.
+Insieme, su una macchina in tema scuro, producono testo grigio su nero: la prima
+cosa che vedrebbe qualcuno aprendo il progetto.
+
+*Lezione:* i difetti di integrazione non stanno **dentro** i pezzi, stanno
+**tra** i pezzi. Nessuna revisione che guardi un pezzo alla volta li può trovare,
+per quanto sia attenta.
+
+**Il difetto nascosto da un'aspettativa.** Il test di contratto non riusciva a
+leggere la chiave API dal file `.env`, perché lo strumento di test espande quelle
+variabili contro una *copia* dell'ambiente e non le riscrive mai in quello vero.
+Il risultato era un fallimento con scritto "chiave non impostata". Ed era
+esattamente il messaggio che ci si aspettava di vedere, non avendo una chiave —
+quindi era stato letto come conferma che tutto funzionasse.
+
+*Lezione, la più sottile delle tre:* **un'aspettativa può nascondere un difetto
+che ha lo stesso aspetto.** Il fallimento atteso e il fallimento reale avevano lo
+stesso testo. L'unico modo di distinguerli era chiedersi *perché* stesse
+fallendo, non se il fallimento fosse quello previsto.
+
+**Nota sul metodo.** La revisione finale non ha dedotto quasi nulla: ha eseguito
+il filtro dello schema contro la libreria vera per vedere cosa produce, ha letto
+il codice sorgente dello strumento di test per stabilire se le variabili
+d'ambiente arrivano davvero, ha confrontato le dipendenze dichiarate con quelle
+installate in modo programmatico. Ogni volta che una risposta era deducibile ma
+verificabile, l'ha verificata. È il motivo per cui ha trovato cose che tutti gli
+altri passaggi avevano lasciato lì.
