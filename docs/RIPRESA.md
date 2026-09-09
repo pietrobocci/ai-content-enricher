@@ -8,7 +8,7 @@ distanza di tempo o da una sessione completamente nuova. Aggiornato al
 
 ## Dove siamo
 
-Branch di lavoro: **`feat/mvp`** (non `master`). Nessun push, nessun remote.
+Branch: **`main`**.
 
 | Task | Stato |
 |---|---|

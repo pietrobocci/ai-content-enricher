@@ -56,7 +56,7 @@ riga per riga da chi lo ha commissionato.**
 
 ## Convenzioni
 
-- Branch di lavoro: `feat/mvp`. Non lavorare su `master`. Non fare push.
+- Branch principale: `main`.
 - Identità git **personale** (`pietroboccimeetin@gmail.com`), impostata a livello
   di repository. Non usare mai l'indirizzo aziendale.
 - Commit: conventional commits in italiano, con trailer
