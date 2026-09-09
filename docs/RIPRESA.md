@@ -8,7 +8,8 @@ distanza di tempo o da una sessione completamente nuova. Aggiornato al
 
 ## Dove siamo
 
-Branch: **`main`**.
+Branch: **`main`**. Pubblicato su
+<https://github.com/pietrobocci/ai-content-enricher> (pubblico).
 
 | Task | Stato |
 |---|---|
