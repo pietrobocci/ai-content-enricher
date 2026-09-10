@@ -35,7 +35,12 @@ export type GeminiOptions = {
  */
 type ErroreConAttesa = AppError & { attesaMs?: number };
 
-const MODELLO_DEFAULT = "gemini-2.5-flash";
+// I modelli gratuiti vengono ritirati nel tempo. `gemini-2.5-flash`, scelto
+// quando il progetto è nato, compare ancora nell'elenco dei modelli ma
+// risponde 404 ai nuovi utenti: "no longer available to new users".
+// Se questa costante smette di funzionare, la lista aggiornata si ottiene con
+// una GET su https://generativelanguage.googleapis.com/v1beta/models
+const MODELLO_DEFAULT = "gemini-3.6-flash";
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /**

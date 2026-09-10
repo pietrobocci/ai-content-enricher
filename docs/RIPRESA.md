@@ -81,10 +81,11 @@ davanti allo schermo.
 1. **Ottenere una chiave API gratuita di Google Gemini** da
    <https://aistudio.google.com/apikey>, poi copiare `.env.example` in `.env` e
    riempire `GEMINI_API_KEY`.
-2. **Verificare che il modello sia ancora disponibile sul piano gratuito.** Il
-   provider usa `gemini-2.5-flash` (costante `MODELLO_DEFAULT` in
-   `src/lib/provider.ts`): i nomi dei modelli gratuiti cambiano nel tempo, se
-   quello non esiste più va aggiornata quella costante.
+2. ~~Verificare il modello~~ **fatto il 2026-09-10.** `gemini-2.5-flash` era
+   stato ritirato per i nuovi utenti (404 "no longer available to new users",
+   pur comparendo ancora nell'elenco dei modelli). La costante
+   `MODELLO_DEFAULT` in `src/lib/provider.ts` ora punta a `gemini-3.6-flash`,
+   verificato funzionante con lo schema strutturato.
 3. **Eseguire il test di contratto:** `npm run test:contract`. Chiama la rete
    davvero e consuma una richiesta di quota. Verifica solo che la risposta sia
    JSON con i cinque campi previsti; le regole di contenuto restano coperte

@@ -552,3 +552,51 @@ d'ambiente arrivano davvero, ha confrontato le dipendenze dichiarate con quelle
 installate in modo programmatico. Ogni volta che una risposta era deducibile ma
 verificabile, l'ha verificata. È il motivo per cui ha trovato cose che tutti gli
 altri passaggi avevano lasciato lì.
+
+---
+
+## 15. Il modello c'era nell'elenco, ma non era più utilizzabile
+
+**Quando:** la prima prova con la chiave API vera, a progetto già pubblicato.
+
+**Cosa è successo.** Il test di contratto — l'unico che chiama davvero l'API —
+è fallito con **404**. Un 404, non un 401: quindi non un problema di
+autenticazione, ma "questa cosa non esiste".
+
+**La diagnosi, passo per passo.** Invece di indovinare, tre domande in
+sequenza, ognuna con una risposta netta:
+
+1. *La chiave è valida?* Richiesta all'elenco dei modelli: **HTTP 200**. Sì.
+2. *Il modello esiste?* Nell'elenco appariva `gemini-2.5-flash`, con tanto di
+   descrizione e limiti di token. Sembrava di sì.
+3. *Allora perché 404?* Riproducendo la chiamata vera, la risposta diceva
+   tutto:
+
+```
+This model models/gemini-2.5-flash is no longer available to new users.
+Please update your code to use models/gemini-3.6-flash
+```
+
+**Il punto interessante.** Il modello **compariva ancora nell'elenco** ma non
+era utilizzabile da un account nuovo. Le due domande *"esiste?"* e *"posso
+usarlo io?"* hanno risposte diverse, e l'elenco risponde solo alla prima. Una
+verifica basata sull'elenco — che era esattamente quella prevista dal piano —
+avrebbe detto "tutto a posto" e il problema sarebbe rimasto.
+
+**Come è stato risolto.** Costante `MODELLO_DEFAULT` aggiornata a
+`gemini-3.6-flash`, verificata con una chiamata reale **completa di schema
+strutturato**, non solo con un ping: la risposta è arrivata nella forma esatta
+attesa dal contratto.
+
+**Lezione.** Un servizio esterno può essere elencato, documentato e comunque
+inaccessibile a te. L'unica verifica che conta è **fare la chiamata che farà il
+programma**, con gli stessi parametri. È anche il motivo per cui esiste il test
+di contratto: tutti gli altri 54 test erano verdi, e sarebbero rimasti verdi
+per sempre, perché nessuno di loro tocca la rete. Quel singolo test escluso
+dalla suite è l'unico che poteva accorgersene.
+
+**Una nota di misura, per il futuro.** La chiamata reale su una foto vera ha
+impiegato **circa 27 secondi**. È molto per un'operazione con una persona che
+aspetta davanti allo schermo, e non era prevedibile dai test offline, dove il
+provider finto risponde all'istante. Se il progetto crescesse, è il primo posto
+dove mettere una barra di avanzamento o un modello più veloce.
