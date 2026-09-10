@@ -53,6 +53,9 @@ riga per riga da chi lo ha commissionato.**
 - **Tutto in locale in fase 1.** SQLite come file, immagini in `public/uploads/`.
   Niente deploy, autenticazione, elaborazione a lotti o CMS headless.
 - **Lingua: italiano** — interfaccia, commenti, messaggi, contenuti generati.
+  **Eccezione: il `README.md` e la descrizione del repository su GitHub sono
+  in inglese**, perché sono la vetrina del progetto e chi seleziona spesso non
+  è italiano. Non tradurli in italiano "per coerenza".
 
 ## Convenzioni
 
