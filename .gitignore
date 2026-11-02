@@ -55,3 +55,6 @@ next-env.d.ts
 /.claude
 /.windsurf
 /skills-lock.json
+
+# graphify: grafo locale e configurazione dell'assistente, non fanno parte del progetto
+/graphify-out/
